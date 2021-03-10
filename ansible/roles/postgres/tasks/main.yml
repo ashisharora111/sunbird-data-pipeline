@@ -15,6 +15,16 @@
                 state=present
   tags: createdb
 
+- name: Ensure database for superset is created
+  postgresql_db: name="superset" \
+                login_host="{{ postgres.db_url }}" \
+                port="{{ postgres.db_port }}" \
+                login_user="{{ postgres.db_admin_user }}" \
+                login_password="{{ postgres.db_admin_password }}" \
+                encoding='UTF-8' \
+                state=present
+  tags: createdb
+
 - name: Ensure user has access to the database
   postgresql_user: name="{{ postgres.db_username }}" \
                   password="{{ postgres.db_password }}" \
@@ -26,6 +36,19 @@
                   login_user="{{ postgres.db_admin_user }}" \
                   login_password="{{ postgres.db_admin_password }}" \
                   db="{{ postgres.db_name }}"
+  tags: createuser
+
+- name: Ensure user has access to the superset database
+  postgresql_user: name="{{ postgres.db_username }}" \
+                  password="{{ postgres.db_password }}" \
+                  no_password_changes=true \
+                  priv=ALL \
+                  state=present \
+                  login_host="{{ postgres.db_url }}" \
+                  port="{{ postgres.db_port }}" \
+                  login_user="{{ postgres.db_admin_user }}" \
+                  login_password="{{ postgres.db_admin_password }}" \
+                  db="superset"
   tags: createuser
 
 - name: create {{ env }}_consumer-channel-mapping
@@ -62,3 +85,34 @@
   shell: PGPASSWORD="{{ postgres.db_password }}" psql -U "{{ postgres.db_username }}" -d "{{ postgres.db_name }}" -h "{{ postgres.db_url }}" -p "{{ postgres.db_port }}" -c "select * from {{ env }}_consumer_channel_mapping"
   run_once: true
   tags: select
+
+  #- name: create report_status
+  #shell: PGPASSWORD="{{ postgres.db_password }}" psql -U "{{ postgres.db_username }}" -d "{{ postgres.db_name }}" -h "{{ postgres.db_url }}" -p "{{ postgres.db_port }}" -c "CREATE TABLE report_status(reportid varchar(40) NOT NULL REFERENCES report(reportid) ON DELETE CASCADE, hashed_val text NOT NULL, status varchar(8) NOT NULL CHECK (status IN ('live', 'draft', 'retired')) DEFAULT 'draft', PRIMARY KEY (reportid, hashed_val))"
+  run_once: true
+  tags: create
+
+  #- name: create {{ env }}_job_request
+  #shell: PGPASSWORD="{{ postgres.db_password }}" psql -U "{{ postgres.db_username }}" -d "{{ postgres.db_name }}" -h "{{ postgres.db_url }}" -p "{{ postgres.db_port }}" -c "CREATE TABLE {{ env }}_job_request(tag VARCHAR(100), request_id VARCHAR(50), job_id VARCHAR(50), status VARCHAR(50), request_data json, requested_by VARCHAR(50), requested_channel VARCHAR(50), dt_job_submitted TIMESTAMP, download_urls text[], dt_file_created TIMESTAMP, dt_job_completed TIMESTAMP, execution_time INTEGER, err_message VARCHAR(300), iteration INTEGER, encryption_key VARCHAR(50), PRIMARY KEY (tag, request_id))"
+  run_once: true
+  tags: create  
+
+  #- name: create {{ env }}_experiment_definition
+  #shell: PGPASSWORD="{{ postgres.db_password }}" psql -U "{{ postgres.db_username }}" -d "{{ postgres.db_name }}" -h "{{ postgres.db_url }}" -p "{{ postgres.db_port }}" -c "CREATE TABLE {{ env }}_experiment_definition (exp_id VARCHAR(50), created_by VARCHAR(50), created_on TIMESTAMP, criteria VARCHAR(100), exp_data VARCHAR(300), exp_description VARCHAR(200), exp_name VARCHAR(50), stats VARCHAR(300), status VARCHAR(50), status_message VARCHAR(50), updated_by VARCHAR(50), updated_on TIMESTAMP, PRIMARY KEY(exp_id))"
+  run_once: true
+  tags: create  
+
+
+- name: update report
+  shell: PGPASSWORD="{{ postgres.db_password }}" psql -U "{{ postgres.db_username }}" -d "{{ postgres.db_name }}" -h "{{ postgres.db_url }}" -p "{{ postgres.db_port }}" -c "ALTER TABLE report ADD COLUMN parameters jsonb"
+  run_once: true
+  tags: update
+
+- name: update report_summary
+  shell: PGPASSWORD="{{ postgres.db_password }}" psql -U "{{ postgres.db_username }}" -d "{{ postgres.db_name }}" -h "{{ postgres.db_url }}" -p "{{ postgres.db_port }}" -c "ALTER TABLE report_summary ADD COLUMN param_hash text"
+  run_once: true
+  tags: update
+
+- name: update report
+  shell: PGPASSWORD="{{ postgres.db_password }}" psql -U "{{ postgres.db_username }}" -d "{{ postgres.db_name }}" -h "{{ postgres.db_url }}" -p "{{ postgres.db_port }}" -c "ALTER TABLE report ADD COLUMN report_type varchar(8) NOT NULL DEFAULT 'report'"
+  run_once: true
+  tags: update 
