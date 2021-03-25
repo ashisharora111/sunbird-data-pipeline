@@ -127,11 +127,11 @@
   template: src=log4j2.xml.j2 dest={{ analytics.home }}/models-{{ model_version }}/log4j2.xml mode=755 owner={{ analytics_user }} group={{ analytics_group }}
   tags: [ dataproducts, framework, ed-dataproducts ]
 
-- name: Copy Scripts
-  template: src={{ item }}.j2 dest={{ analytics.home }}/scripts/{{ item }}.sh mode=755 owner={{ analytics_user }} group={{ analytics_group }}
-  with_items: "{{ analytics.scripts }}"
-  tags: [ dataproducts, framework, ed-dataproducts ]
-  when: dockdataproducts is undefined
+#- name: Copy Scripts
+#  template: src={{ item }}.j2 dest={{ analytics.home }}/scripts/{{ item }}.sh mode=755 owner={{ analytics_user }} group={{ analytics_group }}
+#  with_items: "{{ analytics.scripts }}"
+#  tags: [ dataproducts, framework, ed-dataproducts ]
+#  when: dockdataproducts is undefined
 
 - name: Copy Dock Scripts
   template: src={{ item }}.j2 dest={{ analytics.home }}/scripts/{{ item }}.sh mode=755 owner={{ analytics_user }} group={{ analytics_group }}
