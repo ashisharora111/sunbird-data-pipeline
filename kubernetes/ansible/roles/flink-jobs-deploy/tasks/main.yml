@@ -9,8 +9,6 @@
     - "{{ job_names_to_deploy.split(',')|list }}"
   ignore_errors: yes
   
-- name: set access-key
-  shell: aws configure set aws_access_key_id AKIA3K476SZH3RZ4OXCZ
 
 - name: helm upgrade
   shell: helm upgrade --install {{ item }} {{ chart_path }} --set job_classname={{ flink_job_names['%s'|format(item)].job_class_name }} --set taskmanager.replicas={{ flink_job_names['%s'|format(item)].replica }} --set taskmanager.cpu_requests={{ flink_job_names['%s'|format(item)].cpu_requests }} -n {{ flink_namespace }}
